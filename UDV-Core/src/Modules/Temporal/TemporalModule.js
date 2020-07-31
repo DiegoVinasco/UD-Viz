@@ -2,11 +2,13 @@ import * as THREE from 'three';
 import * as itowns from 'itowns';
 
 import { $3DTemporalExtension } from './3DTILES_temporal/3DTemporalExtension';
-import { TemporalWindow } from './views/TemporalWindow';
+import { TemporalGraphWindow } from './views/TemporalGraphWindow';
+import { TemporalSliderWindow } from './views/TemporalSliderWindow';
 import { TilesManager } from '../../Utils/3DTiles/TilesManager';
 import { CityObjectStyle } from '../../Utils/3DTiles/Model/CityObjectStyle';
 import { CityObjectID } from '../../Utils/3DTiles/Model/CityObject';
 import { getVisibleTiles } from '../../Utils/3DTiles/3DTilesUtils';
+import { EnumTemporalWindow } from './views/EnumWindows';
 
 /**
  * This module is used to manage the update, deletion and creation of documents.
@@ -30,6 +32,7 @@ export class TemporalModule {
     };
      */
     constructor(layerConfig, itownsView, temporalOptions) {
+
         // Current time at which the scene is displayed
         this.currentTime = temporalOptions.currentTime;
 
@@ -69,10 +72,26 @@ export class TemporalModule {
         }
         const refreshCallback = currentTimeUpdated.bind(this);
 
-        // Instantiate the temporal window
-        // TODO: make it active by default
-        this.temporalWindow = new TemporalWindow(refreshCallback, temporalOptions);
+        // Callback to get data asynchronously from the tileset.jsonS
+        function getAsynchronousData(){
+                let versions = this.temporalExtension.temporal_tileset.temporalVersions.versions;
+                let versionTransitions = this.temporalExtension.temporal_tileset.versionTransitions;
+                return [versions, versionTransitions]
+            }
+
+        // Select the window type:
+        switch (temporalOptions.temporalWindow.name) {
+                    case EnumTemporalWindow.SLIDERWINDOW :
+                        this.temporalWindow = new TemporalSliderWindow(refreshCallback, temporalOptions);
+                        break;
+                    case EnumTemporalWindow.GRAPHWINDOW :
+                        temporalOptions.temporalWindow.getAsynchronousData = getAsynchronousData.bind(this);
+                        this.temporalWindow = new TemporalGraphWindow(refreshCallback, temporalOptions);
+                        break;
+            }
+
     }
+
 
     initTransactionsStyles() {
         // Set styles

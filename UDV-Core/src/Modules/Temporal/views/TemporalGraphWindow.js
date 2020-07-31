@@ -1,4 +1,5 @@
 import { Window } from "../../../Utils/GUI/js/Window";
+import { NetworkManager } from "./NetworkManager";
 import './TemporalWindow.css';
 
 // TODO: MANAGE DATES WITH MOMENT
@@ -14,32 +15,23 @@ import './TemporalWindow.css';
  * @param refreshCallback : callback to be called when the time has changed.
  * @param options : optional parameters (min time, max time and current time)
  */
-export class TemporalWindow extends Window {
+export class TemporalGraphWindow extends Window {
     constructor(refreshCallback, options = {}) {
-        super('temporal', 'Temporal Navigation', false);
-
-        // Minimum and maximum times that can be displayed by this occurence
-        this.minTime = options.minTime || 2009;
-        this.maxTime = options.maxTime || 2015;
-
-        // The currently selected timestamp
-        this.currentTime = options.currentTime || 2009;
-
-        // The timestep used to increment or decrement time with the slide buttons.
-        // Note that timeStep is a "duration" as opposed to a timestamp.
-        this.timeStep = options.timeStep || 1;
+    // option : getAsynchronousData
+        super('temporal', 'Temporal Graph Navigation', false);
 
         this.refreshCallback = refreshCallback;
+
+        // graph
+        this.networkManager = new NetworkManager();
+        this.networkManager.option=options.temporalWindow.option;
+        this.networkManager.getAsynchronousData = options.temporalWindow.getAsynchronousData;
     }
 
     get innerContentHtml() {
         return /*html*/`
             <div id="temporalWindow">
-            <div id="timeSliderMinDate">${this.minTime}</div>
-            <div id="timeSliderMaxDate">${this.maxTime}</div>
-            <input type="text" id="timeSliderValue" value=${this.currentTime}>
-            <input  id="timeSlider" type="range" min=${this.minTime} max=${this.maxTime}
-                    value=${this.currentTime} step=${this.timeStep}>
+            <div id="mynetwork"></div>
             </div>
         `;
     }
@@ -56,38 +48,23 @@ export class TemporalWindow extends Window {
         this.window.style.setProperty('margin-bottom', 'auto');
         // Window size and center text
         this.window.style.setProperty('width', '700px');
-        this.window.style.setProperty('height', '115px');
+        this.window.style.setProperty('height', '215px');
+//        this.window.style.setProperty('height', '115px');
         this.window.style.setProperty('text-align', 'center');
 
-        // Hook up the callbacks
-        document.getElementById('timeSliderValue').addEventListener(
-            'input', this.timeSelection.bind(this), false);
-        document.getElementById('timeSlider').addEventListener(
-            'input', this.timeSelectionSlider.bind(this), false);
+        // Add graph
+        this.networkManager.init();
+        this.networkManager.add_event((param)=>{this.changeTime(param)});
     }
 
-    // TODO: not sure we need two methods doing the same thing here.
-    // Call back on new user input with the date selector
-    timeSelection() {
-        const time = document.getElementById('timeSliderValue').value.toString();
-        this.changeTime(time);
-    }
-
-    // Call back on new user input with the time slider
-    timeSelectionSlider()  {
-        var timeFromSlider = document.getElementById('timeSlider').value.toString();
-        this.changeTime(timeFromSlider);
-    }
 
     // change the current date and sync the temporal version to this new date
     changeTime(time) {
         this.currentTime = time;
 
-        document.getElementById('timeSlider').value = time;
-        document.getElementById('timeSliderValue').value = time;
-
         // Eventually inform who it may concern (e.g. an associated iTowns layer)
         // that the currentTime has changed:
         this.refreshCallback(this.currentTime);
     }
+
 }
