@@ -7,6 +7,7 @@ import { $3DTemporalBatchTable } from './3DTemporalBatchTable';
 import { $3DTemporalPrimaryTransaction } from './3DTemporalPrimaryTransaction';
 import {$3DTemporalTransactionAggregate} from "./3DTemporalTransactionAggregate";
 
+
 /**
  * @module TemporalExtension
  */
